@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# THINK WRONG prototype CI. Downloads Godot 4.3 headless, parse-checks every
+# script via an editor import, runs the deterministic test suite, and boots the
+# project. No secrets required.
+
+jobs:
+  godot:
+    name: Parse-check, tests & boot
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: "4.3"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Godot ${{ env.GODOT_VERSION }} headless
+        run: |
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$URL"
+          unzip -q godot.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          chmod +x godot
+      - name: Import project (parse-checks every script)
+        run: |
+          ./godot --headless --editor --quit --path . 2>&1 | tee import.log || true
+          if grep -qE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" import.log; then
+            echo "::error::GDScript parse/compile errors found"; exit 1
+          fi
+      - name: Deterministic tests (framework + puzzles + save + WAIT clock)
+        run: ./godot --headless --path . --script tests/gdscript/run_tests.gd
+      - name: Boot smoke test (no runtime errors)
+        run: |
+          timeout 8 ./godot --headless --path . 2>&1 | tee boot.log || true
+          if grep -qE "SCRIPT ERROR|ERROR: .*res://" boot.log; then
+            echo "::error::runtime errors on boot"; exit 1
+          fi
