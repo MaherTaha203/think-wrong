@@ -1,0 +1,46 @@
+# Godot 4
+.godot/
+.import/
+
+# Exports / build artifacts
+/export/
+/exports/
+/build/
+/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Temp
+*.tmp
+*.temp
+*.log
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Secrets / signing material (never commit)
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.mobileprovision
+*.pem
+*.key
+*.cer
+*.p8
+
+# Python caches (dev tooling only)
+__pycache__/
+*.pyc
+
+# Local
+.local/
