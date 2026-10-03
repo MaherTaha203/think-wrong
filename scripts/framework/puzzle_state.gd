@@ -19,8 +19,11 @@ func set_fact(key: String, value) -> void:
 func has_fact(key: String) -> bool:
 	return facts.has(key)
 
+## Advance the injected clock. Negative, NaN and infinite steps are ignored so a
+## bad frame delta can never corrupt (or instantly finish) a timed puzzle.
 func advance_time(dt: float) -> void:
-	elapsed += maxf(0.0, dt)
+	if is_finite(dt) and dt > 0.0:
+		elapsed += dt
 
 func snapshot() -> Dictionary:
 	return {"facts": facts.duplicate(true), "elapsed": elapsed}

@@ -3,13 +3,20 @@ class_name PuzzleController
 ## Generic, deterministic puzzle engine. Holds a PuzzleDefinition, the mutable
 ## PuzzleState, a HintController and counters. No UI, no randomness, no real time
 ## (time is advanced explicitly), so every puzzle is headless-testable.
+##
+## The controller is the single owner of completion: `completed` fires exactly
+## once per run (from a solving action or from the clock), and once a run is
+## complete further input is ignored until reset().
 
 enum Result { OK, OK_COMPLETED, NO_PROGRESS, INVALID }
+
+const DEFAULT_FAIL := "Nothing happens."
 
 var definition: PuzzleDefinition
 var state: PuzzleState
 var hints: HintController
 var wrong_attempts: int = 0
+var _done := false
 
 signal completed()
 signal feedback(message: String, kind: String)  # kind: "info"/"success"/"invalid"
@@ -22,9 +29,18 @@ func reset() -> void:
 	state = PuzzleState.new(definition.initial_facts)
 	hints = HintController.new(definition.hints)
 	wrong_attempts = 0
+	_done = false
 
+## Advance the injected clock; completes a time-gated puzzle when it is due.
 func advance_time(dt: float) -> void:
+	if _done:
+		return
 	state.advance_time(dt)
+	if float(definition.completion.get("min_elapsed", 0.0)) > 0.0 and is_complete():
+		_finish()
+
+func is_finished() -> bool:
+	return _done
 
 func is_complete() -> bool:
 	var comp: Dictionary = definition.completion
@@ -42,11 +58,13 @@ func is_complete() -> bool:
 
 ## Attempt an action. Returns a Result. Invalid/no-progress attempts never change
 ## solving state and increment wrong_attempts (so "invalid interaction" is
-## observable and tested); they never crash.
+## observable and tested); they never crash. Input after completion is ignored.
 func attempt(action_id: String) -> int:
+	if _done:
+		return Result.NO_PROGRESS
 	if not definition.actions.has(action_id):
 		wrong_attempts += 1
-		feedback.emit("Nothing happens.", "invalid")
+		feedback.emit(DEFAULT_FAIL, "invalid")
 		return Result.INVALID
 
 	var a: Dictionary = definition.actions[action_id]
@@ -56,7 +74,7 @@ func attempt(action_id: String) -> int:
 	for k in requires.keys():
 		if state.get_fact(k) != requires[k]:
 			wrong_attempts += 1
-			feedback.emit(str(a.get("feedback", "Nothing happens.")), "invalid")
+			feedback.emit(str(a.get("fail_feedback", DEFAULT_FAIL)), "invalid")
 			return Result.INVALID
 
 	# Apply effects.
@@ -68,7 +86,7 @@ func attempt(action_id: String) -> int:
 	if bool(a.get("solves", false)) and is_complete():
 		if msg != "":
 			feedback.emit(msg, "success")
-		completed.emit()
+		_finish()
 		return Result.OK_COMPLETED
 
 	if bool(a.get("progress", false)):
@@ -81,6 +99,10 @@ func attempt(action_id: String) -> int:
 	if msg != "":
 		feedback.emit(msg, "invalid")
 	return Result.NO_PROGRESS
+
+func _finish() -> void:
+	_done = true
+	completed.emit()
 
 # --- hint passthrough -----------------------------------------------------
 func reveal_hint() -> String:

@@ -9,10 +9,13 @@ class_name PuzzleDefinition
 ##     "effects":  {fact: value, ...}      # applied on a successful attempt
 ##     "solves":   bool                    # whether it can complete the puzzle
 ##     "feedback": String                  # message shown to the player
+##     "fail_feedback": String             # shown when "requires" is not met
 ##     "progress": bool                    # true if it legitimately changes state
 ## }
 ## completion: { "facts": {fact: value, ...}, "min_elapsed": float }
 ## A puzzle is solved when every required fact matches AND elapsed >= min_elapsed.
+## solution: the intended action ids in order ([] for a pure-wait puzzle). It is
+## design data: tests prove no other sequence completes the puzzle.
 
 var id: int
 var key: String
@@ -24,6 +27,7 @@ var actions: Dictionary = {}
 var initial_facts: Dictionary = {}
 var completion: Dictionary = {"facts": {}, "min_elapsed": 0.0}
 var hints: Array = []            # [assumption-challenge, relationship, solution]
+var solution: Array = []         # intended action ids, in order
 var time_threshold: float = 0.0  # > 0 for time-based puzzles (WAIT)
 
 func _init(data: Dictionary) -> void:
@@ -42,6 +46,7 @@ func _init(data: Dictionary) -> void:
 	if not completion.has("min_elapsed"):
 		completion["min_elapsed"] = 0.0
 	hints = data.get("hints", []).duplicate(true)
+	solution = data.get("solution", []).duplicate()
 	time_threshold = float(data.get("time_threshold", 0.0))
 
 func action_ids() -> Array:
