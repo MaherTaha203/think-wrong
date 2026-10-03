@@ -1,83 +1,106 @@
 # THINK WRONG — Design Validation Gate
 
-Evaluated after implementing the five prototype puzzles, before any expansion.
-Each puzzle is assessed against the 10 fairness/clarity criteria. A puzzle passes
-only if it misdirects **expectation** without ever hiding required information or
-requiring luck. Logic for every puzzle is covered by deterministic headless tests
-(`tests/gdscript/run_tests.gd`, 106 checks, 0 failures).
+Re-validated during the Phase 1 Final Verification & Audit, against the **actual
+code** at commit `0e5f706` (not against an earlier draft of this document). Each
+puzzle is assessed against the 10 fairness/clarity criteria. A puzzle passes only
+if it misdirects **expectation** without ever hiding required information or
+requiring luck.
+
+Evidence basis (this commit):
+- Logic: `tests/gdscript/run_tests.gd`, **318 checks, 0 failures**, identical in
+  forward / reverse / shuffled order. Includes exhaustive completion-integrity
+  (every action sequence up to length 4 per puzzle) proving **no side path**
+  reaches completion, determinism, interaction bindings, and WAIT edge cases.
+- On-screen reality: `tests/visual/qa_tour.gd` boots the real game under a
+  display, drives it with injected touch, and asserts each clue is rendered and
+  each solving control is a real enabled button — **175 checks, 0 failures** at
+  720×1280, 720×1600 and 960×1280.
+- Save: `tests/integration/save_io_test.gd`, **20 checks, 0 failures**.
 
 Criteria: (1) objective clear · (2) natural assumption · (3) assumption obvious ·
 (4) sufficient clue to break it · (5) discoverable without luck · (6) interaction
-clear · (7) solution logical · (8) real "aha" · (9) replayable · (10) never
-"how was I supposed to know?".
+clear · (7) solution logical · (8) real "aha" · (9) replayable · (10) never "how
+was I supposed to know?".
 
-## Puzzle 01 — DON'T TOUCH — **PASS**
-- Objective: "Open the door." (clear)
-- Assumption: the big "DO NOT TOUCH" button is the mechanism.
-- Clue: the objective names the door; the door is a visible, labelled control with
-  a handle. Tapping the button gives honest feedback ("buzzer; door stays shut").
-- Solution: tap the door itself. Logical, discoverable, no luck.
-- Aha: "It just said open the door — so I open the door." ✓
-- Tests: initial not-complete, wrong action (button) no-progress, solve, reset,
-  replay. ✓
-- No "how was I supposed to know?": the door is the named objective and visible. ✓
+> Correction vs. the Phase 1 draft: the draft claimed clues were "shown by glyph"
+> and that P05's button honestly reported "no power". In the shipped code the
+> clues were **not rendered at all** and P05's objective was **literally false**
+> (only the lever opened the door). Both were fixed; the tables below describe the
+> audited, tested code.
 
-## Puzzle 02 — THE KEY — **PASS**
-- Objective: "Unlock the lock." (clear)
-- Assumption: move the key to the lock.
-- Clue: affordances shown by glyph + text (key is anchored ⚓; lock is on a rail
-  ↔), never colour alone. Tapping the anchored key says "bolted down".
-- Solution: move the lock to the key. Logical; the movable object is clearly the
-  lock.
-- Aha: "The key wasn't the thing to move." ✓
-- Tests: full set. ✓
+## Per-puzzle results
 
-## Puzzle 03 — WAIT — **PASS (with injected-clock tests)**
-- Objective: stated with urgency; the timer text says the door opens when the
-  timer ends.
-- Assumption: urgency ⇒ act fast / tap the HURRY button.
-- Clue: the literal instruction ("opens when the timer ends") makes waiting
-  discoverable; the HURRY button honestly reports "can't be rushed".
-- Solution: do nothing; wait. Deterministic; the only "action" is a decoy that
-  never blocks completion.
-- Aha: "I didn't need to do anything." ✓
-- Tests: before threshold not complete; decoy tap doesn't complete early or block;
-  completes at/after threshold; reset zeroes the clock; replay. Uses an injected
-  clock (no real time). ✓
+Every row below is backed by a test named in the "Evidence" column of the audit
+report (`docs/PHASE_1_FINAL_AUDIT.md`).
 
-## Puzzle 04 — THE BOX — **PASS**
-- Objective: "Put the object in the box." (clear)
-- Assumption: move the object into the box.
-- Clue: object is pinned (⚓), box is on casters (↔); tapping the pinned object
-  says "won't budge".
-- Solution: move the box to the object. ✓
-- Aha: "Move the box, not the object." ✓
-- Tests: full set. ✓
+### Puzzle 01 — DON'T TOUCH — PASS
+- **Objective:** "Open the door." · **Assumption:** the loud "DO NOT TOUCH"
+  button is the mechanism.
+- **Clue (rendered caption):** button — "Wired to a buzzer."; door — "Closed. It
+  has a handle." Tapping the button honestly reports the buzzer; the door stays
+  shut.
+- **Solution:** tap the door (`open_door`). · **Aha:** "It just said open the
+  door." No pixel hunting, no outside knowledge.
 
-## Puzzle 05 — THE BUTTON — **PASS after a fairness redesign (flagged)**
-- **Flag:** the original concept ("the visible information may not be the complete
-  interaction space") risked a hidden/secondary interaction → pixel hunting, which
-  violates the fairness rules.
-- **Redesign:** the secondary control is **visible, not hidden** — a labelled power
-  lever on the wall. The obvious "OPEN" button is a decoy that honestly reports
-  "no power", a *logical* clue pointing to the lever. The twist is that attention
-  is misdirected to the obvious button, not that anything is concealed.
-- Objective: "Press the button to open the door." (clear)
-- Assumption: the labelled button works.
-- Clue: button says "no power"; a visible lever exists. No invisible hitbox, no
-  arbitrary tap.
-- Solution: pull the lever. ✓
-- Aha: "The real control was right there; I fixated on the obvious one." ✓
-- Tests: wrong action (button, no power) no-progress; solve via lever; reset;
-  replay. ✓
+### Puzzle 02 — THE KEY — PASS
+- **Objective:** "Unlock the lock." · **Assumption:** move the key to the lock.
+- **Clue:** key — "Bolted to the wall."; lock — "On a sliding rail." Tapping the
+  bolted key says it won't move.
+- **Solution:** move the lock to the key (`move_lock_to_key`). The anchored item
+  is provably **not** in the solution; the movable item **is** (asserted).
+
+### Puzzle 03 — WAIT — PASS
+- **Objective:** "Get through the door." (the dishonest "before it's too late"
+  deadline was removed — there is no fail state). · **Assumption:** a countdown
+  means act fast.
+- **Clue:** timer — "At zero, the door opens."; HURRY! — "No wires attached."
+- **Solution:** do nothing; the door opens at the threshold. Uses an **injected
+  clock** (no real time). The HURRY! decoy never completes early nor blocks
+  completion. Edge cases tested: t=0, just-before, exact threshold, after, reset,
+  replay, negative/NaN/INF dt. The clock is **frozen while an overlay is open**
+  (verified: opening Pause during the wait does not auto-complete).
+
+### Puzzle 04 — THE BOX — PASS
+- **Objective:** "Put the object in the box." · **Assumption:** move the object
+  into the box.
+- **Clue:** object — "Pinned to the floor."; box — "On casters."
+- **Solution:** move the box onto the object (`move_box_to_object`).
+
+### Puzzle 05 — THE BUTTON — PASS (after a fairness + honesty redesign)
+- **The twist is misdirection, not concealment.** Both controls are full-size,
+  labelled, captioned, and on screen from the start.
+- **Objective:** "Press the button to open the door." — now **literally true**:
+  pressing OPEN *does* open the door, once it has power.
+- **Clue:** button OPEN — caption "Power light: off." → "Power light: on." after
+  power; lever — "Down: power off." → "Up: power on." Pressing OPEN with no power
+  says "Click. Nothing. The power light is off." (a `fail_feedback`, not a success
+  message).
+- **Solution (2 steps, order matters):** pull the **Power lever**, then press
+  **OPEN** (`["pull_lever", "press_button"]`). Neither step alone completes it
+  (both asserted); the exhaustive test confirms no other sequence completes it.
+- **Aha:** "The button was never broken — I just hadn't powered it."
+
+### Puzzle 05 special audit (per the task)
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Button is a clear, labelled control | PASS | qa_tour: OPEN rendered as enabled button, ≥96 px |
+| "No power" clue is clear | PASS | caption "Power light: off." rendered (qa_tour); fail_feedback on press |
+| Lever actually visible | PASS | qa_tour screenshot `07_puzzle_05.png`; rendered enabled button |
+| Lever has a clear affordance | PASS | label "Power lever" + caption "Down: power off." |
+| No secret area / hidden click target | PASS | only declared interactables exist; completion-integrity over all sequences |
+| No external knowledge needed | PASS | objective + captions fully specify the mechanism |
+| Lever size / position adequate | PASS | 112 px tall control (> 96 px min) at (0.72, 0.53); not tiny, not off-screen |
 
 ## Gate result
 
-All five puzzles **PASS** the fairness/clarity criteria; Puzzle 05 passes only
-because it was redesigned away from a hidden interaction. No puzzle requires luck,
-invisible interaction, or outside knowledge.
+All five puzzles **PASS** the fairness/clarity criteria against the tested code.
+No puzzle requires luck, invisible interaction, or outside knowledge, and no
+completion side path exists.
 
-**Not validated here (UNVERIFIED — require a human/device):** the *felt* strength
-of each "aha", readability and touch feel on real phones, and whether playtesters
-form the intended assumption. Those need human playtesting on devices and are out
-of scope for this environment.
+## Still UNVERIFIED (require a human / real device — out of scope here)
+- The *felt strength* of each "aha", and whether real playtesters form the
+  intended wrong assumption.
+- Touch feel, readability and safe-area behavior on physical phones (the tour
+  runs on desktop GL via Xvfb, not on-device; the Vulkan "mobile" renderer is
+  not exercised because this environment has no Vulkan ICD).
+- Signed Android/iOS builds and store review.

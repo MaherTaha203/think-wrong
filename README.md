@@ -15,10 +15,22 @@ multiplayer, no virtual currency, no store integration in the prototype.
 
 ## Status
 
-Prototype. Verified locally with Godot 4.3 headless: scripts compile with 0
-errors, **106 deterministic tests pass**, project boots clean. Interactive/visual
-behavior on a real device and signed iOS/Android builds are **UNVERIFIED** (need a
-display / devices / credentials).
+Prototype, Phase 1 final-audited (see `docs/PHASE_1_FINAL_AUDIT.md`). Verified
+locally with Godot 4.3 at commit `0e5f706`:
+
+- scripts compile with 0 errors; project boots clean;
+- **318 deterministic logic checks** pass, identical in forward / reverse /
+  shuffled order (`tests/gdscript/run_tests.gd`);
+- **20 save I/O checks** pass with the real autoloads
+  (`tests/integration/save_io_test.gd`);
+- **175 graphical QA checks** pass at 720×1280, 720×1600 and 960×1280 — the real
+  game driven by injected touch under Xvfb/OpenGL 3
+  (`tests/visual/qa_tour.gd`), screenshots saved per run.
+
+Interactive feel on a **physical device**, the Vulkan "mobile" renderer, signed
+iOS/Android builds, and store review are **UNVERIFIED** (need devices /
+credentials). The CI workflow runs all of the above but has **not been executed
+on GitHub** — this repository has no remote.
 
 ## Run
 
@@ -32,7 +44,14 @@ godot --path .                              # run
 ## Test
 
 ```bash
+# deterministic logic (also: -- --order=reverse / --order=shuffle:SEED)
 godot --headless --path . --script tests/gdscript/run_tests.gd
+# save file I/O with the real autoloads (isolated temp save)
+godot --headless --path . res://tests/integration/save_io_test.tscn
+# graphical QA tour: real game, injected touch, screenshots to $TW_QA_OUT
+TW_QA_OUT=/tmp/qa xvfb-run -a -s "-screen 0 1280x1800x24" \
+  godot --path . --display-driver x11 --rendering-driver opengl3 \
+  --audio-driver Dummy --resolution 720x1280 res://tests/visual/qa_tour.tscn
 python3 tools/gen_audio.py                  # regenerate original SFX (rarely needed)
 ```
 
