@@ -12,7 +12,6 @@ const DEFAULT_SAVE_PATH := "user://think_wrong_save.json"
 var save_path := DEFAULT_SAVE_PATH
 var data: Dictionary = {}
 
-signal progress_changed()
 signal settings_changed(key: String)
 
 func _ready() -> void:
@@ -92,14 +91,12 @@ func is_completed(level_id: int) -> bool:
 func record_completion(level_id: int, hints_used: int, total_levels: int) -> void:
 	data = SaveModel.record_completion(data, level_id, hints_used, total_levels)
 	save_game()
-	progress_changed.emit()
 
 func reset_progress() -> void:
 	var kept: Dictionary = data.get("settings", SaveModel.default_settings())
 	data = SaveModel.default_save(Versions.SAVE_DATA_VERSION)
 	data["settings"] = kept
 	save_game()
-	progress_changed.emit()
 
 func set_setting(key: String, value) -> void:
 	data["settings"][key] = value

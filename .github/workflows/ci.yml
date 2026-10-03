@@ -5,9 +5,10 @@ on:
     branches: ["**"]
   pull_request:
 
-# THINK WRONG prototype CI. Downloads Godot 4.3 headless, parse-checks every
-# script via an editor import, runs the deterministic test suite, and boots the
-# project. No secrets required.
+# THINK WRONG prototype CI. Downloads Godot 4.3, parse-checks every script via
+# an editor import, runs the deterministic suites (in several orders, to prove
+# order independence), the save I/O integration test, a boot smoke test, and the
+# graphical QA tour under Xvfb (OpenGL 3 / Mesa llvmpipe). No secrets required.
 
 jobs:
   godot:
@@ -30,11 +31,31 @@ jobs:
           if grep -qE "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" import.log; then
             echo "::error::GDScript parse/compile errors found"; exit 1
           fi
-      - name: Deterministic tests (framework + puzzles + save + WAIT clock)
-        run: ./godot --headless --path . --script tests/gdscript/run_tests.gd
+      - name: Deterministic tests (forward, reverse, shuffled)
+        run: |
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=reverse
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=shuffle:${{ github.run_number }}
+      - name: Save I/O integration (isolated temp save, real autoloads)
+        run: ./godot --headless --path . res://tests/integration/save_io_test.tscn
       - name: Boot smoke test (no runtime errors)
         run: |
           timeout 8 ./godot --headless --path . 2>&1 | tee boot.log || true
           if grep -qE "SCRIPT ERROR|ERROR: .*res://" boot.log; then
             echo "::error::runtime errors on boot"; exit 1
           fi
+      - name: Graphical QA tour (touch input, layout, screenshots)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          for R in 720x1280 720x1600 960x1280; do
+            TW_QA_OUT="$PWD/qa" xvfb-run -a -s "-screen 0 1280x1800x24" \
+              ./godot --path . --display-driver x11 --rendering-driver opengl3 \
+              --audio-driver Dummy --resolution "$R" res://tests/visual/qa_tour.tscn
+          done
+      - name: Upload QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-tour
+          path: qa/
+          if-no-files-found: ignore

@@ -51,9 +51,3 @@ func _init(data: Dictionary) -> void:
 
 func action_ids() -> Array:
 	return actions.keys()
-
-func interactable_ids() -> Array:
-	var out := []
-	for it in interactables:
-		out.append(it.id)
-	return out

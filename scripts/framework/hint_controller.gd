@@ -16,10 +16,6 @@ func total() -> int:
 func has_more() -> bool:
 	return tier < _hints.size()
 
-func is_solution_visible() -> bool:
-	# The last tier is the explicit solution.
-	return tier >= _hints.size() and _hints.size() > 0
-
 ## Reveal the next hint tier; returns the revealed text or "" if none remain.
 func reveal_next() -> String:
 	if tier >= _hints.size():
