@@ -9,7 +9,15 @@
 
 ## 0. Executive status
 
-> **HUMAN PLAYTEST BLOCKED — MORE REAL-WORLD TESTING REQUIRED**
+> **PLAYTEST PACKAGE READY — HUMAN SESSION REQUIRED**
+>
+> (The human session and the physical-device pass themselves remain BLOCKED in
+> this environment — see §4, §5. What is now *ready* is everything that can be
+> prepared without fabricating human results: a verified frozen build, a run
+> method, test-data isolation/reset, and a complete printable test package.)
+
+### Prior status (superseded)
+> HUMAN PLAYTEST BLOCKED — MORE REAL-WORLD TESTING REQUIRED
 
 The Human Playtest Gate asks for **real, naive human players** and, where
 possible, a **physical device**. Neither is available to an automated agent in
@@ -218,23 +226,68 @@ No change was made to gameplay, puzzles, hints, save, or architecture.
 
 ---
 
+## 7b. Playtest package (prepared this pass) — READY
+
+A ready-to-run package was added under `playtest/` (documentation/forms only — no
+game content, features, analytics, or in-game tracking):
+
+| File | Purpose |
+| --- | --- |
+| `playtest/README_FACILITATOR.md` | Exact build + run method + requirements; test-data isolation and reset-between-participants; facilitator conduct rules; timing/attempt capture that does not influence the player; analysis + classification rules. |
+| `playtest/observation_sheet.md` | One per player **per puzzle** — the 15 observation fields (printable). |
+| `playtest/assumption_grid.md` | One per player — intended vs **observed** assumption comparison (the key measure). |
+| `playtest/hint_log.md` | One per player — hint tier usage and the "hint leaked info not on screen?" check. |
+| `playtest/post_session.md` | One per player — open post-session questions + findings table. |
+
+**Build to test:** commit `6346808` (game sources byte-identical at the current
+HEAD; verified `git diff 6346808 HEAD -- scripts scenes project.godot assets` = 0).
+**Run method:** Godot 4.3 editor, Play — from source (no signed/exported build;
+export templates/SDK/signing are unavailable here). **Isolation/reset:** dedicated
+test account + in-game Reset Progress or deleting the local save between players
+(paths documented in the facilitator guide).
+
+### Measurement-validity review (Step 4) — PASS
+Every required measure is collectable by observation or an open question, without
+a leading prompt or an intervention that changes behavior:
+- first assumption / intended-vs-observed → think-aloud + `assumption_grid.md`;
+- first actions, unintended attempts → observed (`observation_sheet.md` #2,#4,#12);
+- hint usage → player-driven only (`hint_log.md`; facilitator never prompts a hint);
+- moment of discovery → silent stopwatch + observed "aha" (#5,#11);
+- clarity/fairness feeling → #9,#10,#13 and open post-session questions;
+- suspected hidden interaction → #14 + an open, post-hoc question (asked after the
+  whole run to avoid priming).
+No measure required a game change; where a measure risked priming, the **protocol**
+(timing of the question) was adjusted, not the game.
+
+### Result-independence review (Step 5) — PASS
+Facilitator rules enforce: hint timing is player-chosen (facilitator does not know
+or decide when to hint); solutions/hints are shown only when the player opens them
+in game; one player at a time with no observing of others; the build is frozen for
+the whole group; incompletes/declined-hints are recorded; inconvenient data is
+never discarded.
+
 ## 8. Recommended next action
 
-Run the protocol in §3 with 4–6 naive players on build `6346808` (ideally at
-least one on a physical Android and one on iOS). Capture the §3.4 sheets and the
-§3.5 assumption comparison, then return here to fill §4–§6 and re-run the gate
-decision. Until then, the experiential quality of the game is unestablished.
+Run the §3 protocol using the `playtest/` package with 4–6 naive players on build
+`6346808` (ideally also at least one on a real Android and one on iOS once a signed
+build exists). Capture the forms and the assumption grid, then return here to fill
+§4–§6 and re-run the gate decision. Until then, the experiential quality of the
+game is unestablished.
 
 ---
 
 ## 9. Gate decision
 
-**HUMAN PLAYTEST BLOCKED — MORE REAL-WORLD TESTING REQUIRED**
+**PLAYTEST PACKAGE READY — HUMAN SESSION REQUIRED**
 
-The build is verified and ready for a human playtest (baseline green, ONE LINE
-isolated, protocol and instrument prepared), but the playtest itself and the
-physical-device pass **could not be performed** in this environment and are
-recorded as BLOCKED — not as PASS, and not fabricated.
+Everything preparable without real humans or a device is done and verified: the
+build is frozen and re-verified (baseline green, twice), game sources are
+byte-identical to the test commit, ONE LINE is isolated, and a complete run
+method + test-data isolation + printable test package (`playtest/`) are in place.
+
+The **human playtest session** and the **physical-device pass** still
+**could not be performed** in this environment and remain **BLOCKED** — not PASS,
+and not fabricated. The Human Playtest Gate is therefore **not** declared passed.
 
 No claim is made that the puzzles are fun, that the "aha" is strong, that players
 form the intended assumption, that difficulty is appropriate, or that the game is
