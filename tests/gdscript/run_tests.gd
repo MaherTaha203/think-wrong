@@ -19,7 +19,7 @@ func _init() -> void:
 		_test_determinism, _test_completion_integrity, _test_interaction_binding,
 		_test_completion_once, _test_wait_edges, _test_objective_honesty,
 		_test_save_extended, _test_data_isolation, _test_text_hygiene,
-		_test_safe_area_math,
+		_test_safe_area_math, _test_contrast, _test_captions,
 	]
 	var order := "forward"
 	for arg in OS.get_cmdline_user_args():
@@ -295,6 +295,13 @@ func _test_interaction_binding() -> void:
 			_check(int(bound.get(aid, 0)) == 1, "%s: action '%s' bound to exactly one control" % [tag, aid])
 		for aid in _solution(def):
 			_check(bound.has(aid), "%s: solution step '%s' is a visible control" % [tag, aid])
+		# Affordance semantics: a fixed thing is never what you move; a movable
+		# thing is what solves it.
+		for it in def.interactables:
+			if it.anchored:
+				_check(not _solution(def).has(it.action), "%s: anchored '%s' is not in the solution" % [tag, it.id])
+			if it.movable:
+				_check(_solution(def).has(it.action), "%s: movable '%s' is in the solution" % [tag, it.id])
 
 ## completed fires exactly once per attempt-run (actions and time alike), and
 ## nothing after completion changes the outcome.
@@ -479,3 +486,35 @@ func _test_safe_area_math() -> void:
 		"safe area: physical insets scaled to logical units %s" % str(m))
 	var m2: Dictionary = style.call("safe_margins", Rect2i(0, 0, 720, 1280), Vector2i(720, 1280), Vector2(720, 1280), 12)
 	_check(int(m2["top"]) == 12 and int(m2["bottom"]) == 12, "safe area: no inset => minimum gap")
+
+## WCAG AA (4.5:1) for every text/background pair the UI uses.
+func _test_contrast() -> void:
+	var pairs := [
+		["ink/surface", Style.INK, Style.SURFACE], ["ink/bg", Style.INK, Style.BG],
+		["muted/bg", Style.MUTED, Style.BG], ["muted/surface", Style.MUTED, Style.SURFACE],
+		["muted/surface2", Style.MUTED, Style.SURFACE_2], ["ink/surface2", Style.INK, Style.SURFACE_2],
+		["pressed bg/accent", Style.BG, Style.ACCENT], ["success/surface", Style.SUCCESS, Style.SURFACE],
+		["danger/surface", Style.DANGER, Style.SURFACE], ["accent/bg", Style.ACCENT, Style.BG],
+		["hc ink/bg", Style.HC_INK, Style.HC_BG], ["pressed bg/hc accent", Style.BG, Style.HC_ACCENT],
+	]
+	for p in pairs:
+		var r: float = Style.contrast_ratio(p[1], p[2])
+		_check(r >= 4.5, "contrast: %s = %.2f >= 4.5" % [p[0], r])
+
+## Captions follow state, so the screen never shows stale information.
+func _test_captions() -> void:
+	var def := Puzzles.get_def(5)
+	var pc := PuzzleController.new(def)
+	var button: Interactable = def.interactables[0]
+	var lever: Interactable = def.interactables[1]
+	_check(button.caption(pc.state.facts).find("off") != -1, "P05: power light reads off at start")
+	_check(lever.caption(pc.state.facts).find("off") != -1, "P05: lever reads off at start")
+	pc.attempt("pull_lever")
+	_check(button.caption(pc.state.facts).find("on") != -1, "P05: power light reads on after the lever")
+	_check(lever.caption(pc.state.facts).find("on") != -1, "P05: lever reads on after pulling")
+	pc.reset()
+	_check(button.caption(pc.state.facts).find("off") != -1, "P05: reset restores the off caption")
+	for d in Puzzles.all():
+		for it in d.interactables:
+			_check(it.caption(d.initial_facts) == it.clue, "P%02d: '%s' starts with its clue caption" % [d.id, it.id])
+			_check(it.clue.length() <= 32, "P%02d: '%s' caption is short (%d chars)" % [d.id, it.id, it.clue.length()])

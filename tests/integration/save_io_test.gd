@@ -103,7 +103,7 @@ func _run() -> void:
 	add_child(main)
 	for _i in 30:
 		await get_tree().process_frame
-	var cur = ScreenManager._current
+	var cur = ScreenManager.current_screen()
 	_check(cur != null and cur.get_script() != null
 		and cur.get_script().resource_path.ends_with("main_menu.gd"), "boot: corrupted save still reaches the main menu")
 	main.queue_free()

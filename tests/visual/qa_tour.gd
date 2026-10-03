@@ -174,6 +174,16 @@ func _audit_puzzle(def: PuzzleDefinition) -> void:
 
 func _play_wrong(def: PuzzleDefinition) -> void:
 	var sol := _solution(def)
+	if sol.size() > 1:
+		# Every control is part of the solution: try the last step first.
+		var b0 := _button_for_action(def, sol[sol.size() - 1])
+		if b0 != null:
+			await _tap(b0)
+			await _settle(0.2)
+			_check("P%02d: solution out of order does not complete" % def.id, _screen_is("puzzle"), _screen_name())
+			_check("P%02d: out-of-order step explains why" % def.id,
+				_screen_has_text(str(def.actions[sol[sol.size() - 1]].get("fail_feedback", "")).left(12)), "")
+		return
 	for it in def.interactables:
 		if it.is_interactive() and not sol.has(it.action):
 			var b := _find_button(it.label, true)
@@ -187,13 +197,19 @@ func _play_wrong(def: PuzzleDefinition) -> void:
 			return
 
 func _solve(def: PuzzleDefinition) -> void:
-	for aid in _solution(def):
-		var b := _button_for_action(def, aid)
+	var sol := _solution(def)
+	for i in sol.size():
+		var b := _button_for_action(def, sol[i])
 		if b == null:
-			_check("P%02d: control for '%s'" % [def.id, aid], false, "missing")
+			_check("P%02d: control for '%s'" % [def.id, sol[i]], false, "missing")
 			return
 		await _tap(b)
 		await _settle(0.15)
+		if i < sol.size() - 1:
+			await _capture("p%02d_step_%d" % [def.id, i + 1])
+			for it in def.interactables:
+				_check("P%02d: caption for '%s' follows state after step %d" % [def.id, it.id, i + 1],
+					_screen_has_text(it.caption(_current_facts())), it.caption(_current_facts()))
 
 func _wait_puzzle(def: PuzzleDefinition) -> void:
 	# Opening Pause must stop the clock: the puzzle may not finish behind it.
@@ -209,6 +225,12 @@ func _wait_puzzle(def: PuzzleDefinition) -> void:
 		if resume != null:
 			await _tap(resume)
 	await _settle(def.time_threshold + 0.5)
+
+func _current_facts() -> Dictionary:
+	var scr = ScreenManager.current_screen()
+	if scr != null and "_pc" in scr and scr._pc != null:
+		return scr._pc.state.facts
+	return {}
 
 func _pause_label() -> String:
 	return Localization.t("pause") if _find_button(Localization.t("pause")) != null else Localization.t("menu")
@@ -305,8 +327,8 @@ func _settings_walkthrough() -> void:
 # --- layout audit -------------------------------------------------------------
 func _audit_root() -> Control:
 	if ScreenManager.has_overlay():
-		return ScreenManager._overlay
-	return ScreenManager._current
+		return ScreenManager.current_overlay()
+	return ScreenManager.current_screen()
 
 func _audit(screen: String) -> void:
 	var root := _audit_root()
@@ -411,7 +433,7 @@ func _find_toggle(text: String) -> BaseButton:
 	for c in _controls(_audit_root()):
 		if c is CheckButton:
 			var cb := c as CheckButton
-			if cb.text.begins_with(text):
+			if cb.text.begins_with(text):  # "High Contrast: Off"
 				return cb
 			var row := cb.get_parent()
 			for l in row.find_children("*", "Label", true, false):
@@ -428,7 +450,7 @@ func _screen_has_text(fragment: String) -> bool:
 	return false
 
 func _screen_name() -> String:
-	var cur: Node = ScreenManager._current
+	var cur: Node = ScreenManager.current_screen()
 	if cur == null or cur.get_script() == null:
 		return "?"
 	return cur.get_script().resource_path.get_file().get_basename()
