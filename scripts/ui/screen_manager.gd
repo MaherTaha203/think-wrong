@@ -1,9 +1,10 @@
 extends Node
 ## Autoload: screen navigation + overlays.
 ##
-## Full screens replace one another (one alive at a time). Overlays (Pause, Hint)
-## are drawn on top of the current screen without destroying it. Transitions
-## respect the reduced-motion setting.
+## Full screens replace one another (one alive at a time). Overlays (Pause, Hint,
+## confirmations) are drawn on top of the current screen without destroying it.
+## Transitions respect the reduced-motion setting. The incoming screen is on top
+## and stops pointer input, so the outgoing one cannot be tapped while it fades.
 
 const SCREENS := {
 	"menu": "res://scenes/MainMenu.tscn",
@@ -22,6 +23,12 @@ func set_hosts(screen_host: Control, overlay_host: Control) -> void:
 	_host = screen_host
 	_overlay_host = overlay_host
 
+func current_screen() -> Control:
+	return _current if _current != null and is_instance_valid(_current) else null
+
+func current_overlay() -> Control:
+	return _overlay if has_overlay() else null
+
 func goto(screen_name: String) -> void:
 	if _host == null or not SCREENS.has(screen_name):
 		push_error("ScreenManager: bad screen '%s'" % screen_name)
@@ -33,6 +40,7 @@ func goto(screen_name: String) -> void:
 		return
 	var inst := packed.instantiate() as Control
 	inst.set_anchors_preset(Control.PRESET_FULL_RECT)
+	inst.mouse_filter = Control.MOUSE_FILTER_STOP
 	_host.add_child(inst)
 	var old := _current
 	_current = inst

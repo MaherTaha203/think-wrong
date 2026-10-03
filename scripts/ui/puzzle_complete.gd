@@ -1,5 +1,6 @@
 extends Control
-## Puzzle Complete: the "aha" beat, then Next / Replay / Levels.
+## Puzzle Complete: the "aha" beat (the puzzle's title is revealed here), then
+## Next / Replay / Levels.
 
 func _ready() -> void:
 	var result := GameState.last_result
@@ -8,10 +9,15 @@ func _ready() -> void:
 	add_child(center)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", Style.GAP_M)
-	col.custom_minimum_size = Vector2(360, 0)
+	col.custom_minimum_size = Vector2(440, 0)
 	center.add_child(col)
 
 	col.add_child(Style.make_title(Localization.t("solved_title")))
+	var def := Puzzles.get_def(int(result.get("level_id", GameState.current_level_id)))
+	if def != null:
+		var name_label := Style.make_title(def.title, Style.H2_SIZE)
+		name_label.add_theme_color_override("font_color", Style.accent())
+		col.add_child(name_label)
 	col.add_child(Style.make_body(Localization.t("aha")))
 
 	var spacer := Control.new()
