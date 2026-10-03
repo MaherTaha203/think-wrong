@@ -3,9 +3,11 @@ extends Node
 ## the pure SaveModel). No backend. Writes are atomic (temp + rename) so an
 ## interrupted write never yields an empty save.
 
-const SAVE_PATH := "user://think_wrong_save.json"
-const TMP_PATH := "user://think_wrong_save.json.tmp"
+const DEFAULT_SAVE_PATH := "user://think_wrong_save.json"
 
+# Overridable only so QA/test harnesses can use an isolated temporary file and
+# never touch a real player's save. The game itself always uses the default.
+var save_path := DEFAULT_SAVE_PATH
 var data: Dictionary = {}
 
 signal progress_changed()
@@ -15,8 +17,8 @@ func _ready() -> void:
 
 func load_game() -> Dictionary:
 	var text := ""
-	if FileAccess.file_exists(SAVE_PATH):
-		var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if FileAccess.file_exists(save_path):
+		var f := FileAccess.open(save_path, FileAccess.READ)
 		if f != null:
 			text = f.get_as_text()
 			f.close()
@@ -26,7 +28,8 @@ func load_game() -> Dictionary:
 
 func save_game() -> bool:
 	var text := JSON.stringify(data, "\t")
-	var tmp := FileAccess.open(TMP_PATH, FileAccess.WRITE)
+	var tmp_path := save_path + ".tmp"
+	var tmp := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if tmp == null:
 		push_error("SaveManager: cannot open temp save for writing")
 		return false
@@ -34,16 +37,29 @@ func save_game() -> bool:
 	tmp.flush()
 	tmp.close()
 	var err := DirAccess.rename_absolute(
-		ProjectSettings.globalize_path(TMP_PATH),
-		ProjectSettings.globalize_path(SAVE_PATH))
+		ProjectSettings.globalize_path(tmp_path),
+		ProjectSettings.globalize_path(save_path))
 	if err != OK:
-		var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+		var f := FileAccess.open(save_path, FileAccess.WRITE)
 		if f == null:
 			return false
 		f.store_string(text)
 		f.flush()
 		f.close()
 	return true
+
+## Test support: switch to an isolated save file and reload from it.
+func use_save_path(path: String, start_fresh: bool = false) -> Dictionary:
+	save_path = path
+	if start_fresh:
+		discard_save_file()
+	return load_game()
+
+## Test support: delete the current save file (and any leftover temp file).
+func discard_save_file() -> void:
+	for p in [save_path, save_path + ".tmp"]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 
 func settings() -> Dictionary:
 	return data["settings"]
