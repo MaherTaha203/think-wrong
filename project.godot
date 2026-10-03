@@ -32,10 +32,13 @@ window/handheld/orientation="portrait"
 
 [input_devices]
 
-; Native touch (mobile) and native mouse (desktop) are handled directly by the
-; UI; emulation is disabled so events never double-fire.
+; Godot's Button/Control GUI reacts to mouse events only. On phones the OS
+; delivers InputEventScreenTouch, so touch MUST be translated into mouse events
+; or no button ever responds (verified by tests/visual/qa_tour). Buttons ignore
+; the raw touch event, so this never double-fires. The reverse (mouse -> touch)
+; stays off: desktop QA uses the native mouse.
 pointing/emulate_touch_from_mouse=false
-pointing/emulate_mouse_from_touch=false
+pointing/emulate_mouse_from_touch=true
 
 [rendering]
 
