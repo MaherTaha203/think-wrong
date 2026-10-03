@@ -2,10 +2,8 @@ extends RefCounted
 class_name SaveModel
 ## Pure, dependency-free save-data logic for THINK WRONG (no autoloads), so it is
 ## fully verifiable in headless tests. SaveManager (autoload) wraps this with file
-## I/O. Robust against first launch, missing/corrupt/future saves; never destroys
-## valid progress silently.
-
-const MAX_LEVELS_GUARD := 10000
+## I/O. Robust against first launch, missing/corrupt/partial/future saves; keeps
+## every valid piece of progress and settings it can (salvage).
 
 static func default_settings() -> Dictionary:
 	return {
@@ -47,10 +45,12 @@ static func _valid_level_record(v) -> bool:
 		return false
 	return int(v.get("hints_used", 0)) >= 0
 
+const BOOL_SETTINGS := ["sound", "haptics", "reduced_motion", "high_contrast"]
+
 static func _valid_settings(v) -> bool:
 	if typeof(v) != TYPE_DICTIONARY:
 		return false
-	for k in ["sound", "haptics", "reduced_motion", "high_contrast"]:
+	for k in BOOL_SETTINGS:
 		if typeof(v.get(k)) != TYPE_BOOL:
 			return false
 	return typeof(v.get("language")) == TYPE_STRING
@@ -70,7 +70,10 @@ static func migrate(data: Dictionary, version: int) -> Dictionary:
 static func load_from_string(text: String, version: int) -> Dictionary:
 	if text == null or text.strip_edges() == "":
 		return {"save": default_save(version), "recovered": false, "migrated": false}
-	var parsed = JSON.parse_string(text)
+	var json := JSON.new()   # instance parse: reports errors without log spam
+	if json.parse(text) != OK:
+		return {"save": default_save(version), "recovered": true, "migrated": false}
+	var parsed = json.data
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return {"save": default_save(version), "recovered": true, "migrated": false}
 
@@ -93,24 +96,36 @@ static func load_from_string(text: String, version: int) -> Dictionary:
 		return {"save": parsed, "recovered": false, "migrated": migrated}
 	return {"save": _salvage(parsed, version), "recovered": true, "migrated": migrated}
 
+## Rebuild a valid save from whatever is usable: each valid level record, the
+## unlock frontier (stored or implied by completions), and each valid setting.
 static func _salvage(data, version: int) -> Dictionary:
 	var save := default_save(version)
-	if typeof(data) == TYPE_DICTIONARY and typeof(data.get("progress")) == TYPE_DICTIONARY:
-		var levels = data["progress"].get("levels")
+	if typeof(data) != TYPE_DICTIONARY:
+		return save
+	var progress = data.get("progress")
+	if typeof(progress) == TYPE_DICTIONARY:
+		var max_unlocked := 1
+		var um = progress.get("unlocked_max", 1)
+		if (um is int or um is float) and is_finite(float(um)):
+			max_unlocked = maxi(1, int(um))
+		var levels = progress.get("levels")
 		if typeof(levels) == TYPE_DICTIONARY:
 			var good := {}
-			var max_unlocked := 1
 			for k in levels.keys():
 				var rec = levels[k]
 				if _valid_level_record(rec):
-					good[k] = rec
-					if bool(rec.get("completed", false)) and str(k).is_valid_int():
-						max_unlocked = max(max_unlocked, int(k) + 1)
+					good[str(k)] = {"completed": rec["completed"], "hints_used": int(rec["hints_used"])}
+					if bool(rec["completed"]) and str(k).is_valid_int():
+						max_unlocked = maxi(max_unlocked, int(k) + 1)
 			save["progress"]["levels"] = good
-			var um = data["progress"].get("unlocked_max", 1)
-			save["progress"]["unlocked_max"] = max(max_unlocked, int(um) if (um is int or um is float) else 1)
-	if _valid_settings(data.get("settings") if typeof(data) == TYPE_DICTIONARY else null):
-		save["settings"] = data["settings"]
+		save["progress"]["unlocked_max"] = max_unlocked
+	var settings = data.get("settings")
+	if typeof(settings) == TYPE_DICTIONARY:
+		for k in BOOL_SETTINGS:
+			if typeof(settings.get(k)) == TYPE_BOOL:
+				save["settings"][k] = settings[k]
+		if typeof(settings.get("language")) == TYPE_STRING:
+			save["settings"]["language"] = settings["language"]
 	return save
 
 # --- progression (pure) ---------------------------------------------------

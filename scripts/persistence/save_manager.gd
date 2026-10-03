@@ -1,7 +1,9 @@
 extends Node
 ## Autoload: local, versioned, corruption-resilient save (file I/O wrapper around
 ## the pure SaveModel). No backend. Writes are atomic (temp + rename) so an
-## interrupted write never yields an empty save.
+## interrupted write never yields an empty save. A file that cannot be read as-is
+## (corrupt, partial, or from a newer version) is copied to <save>.bak before it
+## can be overwritten, so no player data is ever destroyed silently.
 
 const DEFAULT_SAVE_PATH := "user://think_wrong_save.json"
 
@@ -11,6 +13,7 @@ var save_path := DEFAULT_SAVE_PATH
 var data: Dictionary = {}
 
 signal progress_changed()
+signal settings_changed(key: String)
 
 func _ready() -> void:
 	load_game()
@@ -24,7 +27,20 @@ func load_game() -> Dictionary:
 			f.close()
 	var outcome := SaveModel.load_from_string(text, Versions.SAVE_DATA_VERSION)
 	data = outcome["save"]
+	if outcome["recovered"]:
+		_backup_unreadable(text)
 	return outcome
+
+func _backup_unreadable(text: String) -> void:
+	var f := FileAccess.open(backup_path(), FileAccess.WRITE)
+	if f == null:
+		push_warning("SaveManager: could not back up unreadable save")
+		return
+	f.store_string(text)
+	f.close()
+
+func backup_path() -> String:
+	return save_path + ".bak"
 
 func save_game() -> bool:
 	var text := JSON.stringify(data, "\t")
@@ -55,9 +71,9 @@ func use_save_path(path: String, start_fresh: bool = false) -> Dictionary:
 		discard_save_file()
 	return load_game()
 
-## Test support: delete the current save file (and any leftover temp file).
+## Test support: delete the current save file (and its temp/backup files).
 func discard_save_file() -> void:
-	for p in [save_path, save_path + ".tmp"]:
+	for p in [save_path, save_path + ".tmp", backup_path()]:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 
@@ -88,3 +104,4 @@ func reset_progress() -> void:
 func set_setting(key: String, value) -> void:
 	data["settings"][key] = value
 	save_game()
+	settings_changed.emit(key)
