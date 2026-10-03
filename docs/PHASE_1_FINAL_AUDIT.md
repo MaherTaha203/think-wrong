@@ -7,7 +7,7 @@ is genuinely complete, not merely that the logic tests pass.
 **Audited repository:** `/home/user/think-wrong` (independent; no remote).
 **Baseline (draft) commit:** `a59375a`.
 **Audited-fixes commit:** `0e5f706` (318 logic checks).
-**Phase-1-close commit:** `<this commit>` (adds `APPLICATION_ID` + its test →
+**Phase-1-close commit:** `586c7d3` (adds `APPLICATION_ID` + its test →
 322 logic checks). The evidence table in §0 is from commit `0e5f706`; the
 identical re-run after the bundle-ID change (322/0, twice) is in §10.
 **Engine:** Godot 4.3.stable. **Graphics for the tour:** Xvfb + Mesa llvmpipe,
