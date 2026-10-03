@@ -19,7 +19,7 @@ func _init() -> void:
 		_test_determinism, _test_completion_integrity, _test_interaction_binding,
 		_test_completion_once, _test_wait_edges, _test_objective_honesty,
 		_test_save_extended, _test_data_isolation, _test_text_hygiene,
-		_test_safe_area_math, _test_contrast, _test_captions,
+		_test_safe_area_math, _test_contrast, _test_captions, _test_app_id,
 	]
 	var order := "forward"
 	for arg in OS.get_cmdline_user_args():
@@ -518,3 +518,19 @@ func _test_captions() -> void:
 		for it in d.interactables:
 			_check(it.caption(d.initial_facts) == it.clue, "P%02d: '%s' starts with its clue caption" % [d.id, it.id])
 			_check(it.clue.length() <= 32, "P%02d: '%s' caption is short (%d chars)" % [d.id, it.id, it.clue.length()])
+
+## The canonical application id must be a valid Android application id (Java
+## package name): >= 2 segments, each starting with a letter, only [A-Za-z0-9_],
+## no hyphen. (iOS bundle ids are a superset, so this is valid there too.)
+func _test_app_id() -> void:
+	var id := Versions.APPLICATION_ID
+	_check(id.find("-") == -1, "app id: no hyphen (Android-invalid): '%s'" % id)
+	var segs := id.split(".")
+	_check(segs.size() >= 2, "app id: at least two segments: '%s'" % id)
+	var seg_re := RegEx.create_from_string("^[A-Za-z][A-Za-z0-9_]*$")
+	var all_ok := true
+	for seg in segs:
+		if seg_re.search(seg) == null:
+			all_ok = false
+	_check(all_ok, "app id: every segment is a valid Java identifier: '%s'" % id)
+	_check(id == "com.mahertaha.thinkwrong", "app id: matches the decided value")

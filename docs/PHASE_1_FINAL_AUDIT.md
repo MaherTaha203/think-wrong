@@ -6,7 +6,10 @@ is genuinely complete, not merely that the logic tests pass.
 
 **Audited repository:** `/home/user/think-wrong` (independent; no remote).
 **Baseline (draft) commit:** `a59375a`.
-**Final audited commit:** `0e5f706`.
+**Audited-fixes commit:** `0e5f706` (318 logic checks).
+**Phase-1-close commit:** `<this commit>` (adds `APPLICATION_ID` + its test →
+322 logic checks). The evidence table in §0 is from commit `0e5f706`; the
+identical re-run after the bundle-ID change (322/0, twice) is in §10.
 **Engine:** Godot 4.3.stable. **Graphics for the tour:** Xvfb + Mesa llvmpipe,
 OpenGL 3 Compatibility renderer (Vulkan unavailable — no ICD in this environment).
 
@@ -200,18 +203,31 @@ player data.
 
 ---
 
-## Decision points (need the project owner)
+## Decision points
 
-1. **Android application ID.** The requested bundle `com.maher-taha.thinkwrong`
-   contains a hyphen, which is **illegal in an Android/Java package name**. iOS
-   bundle IDs allow it. No export presets were created this pass (out of scope).
-   Options: `com.mahertaha.thinkwrong` (Android-safe) everywhere, or different
-   IDs per platform. **Awaiting decision.**
+1. **Android application ID — RESOLVED (FIXED + VERIFIED).** The hyphenated
+   `com.maher-taha.thinkwrong` is illegal as an Android/Java package name. The
+   canonical id is now `com.mahertaha.thinkwrong`, stored once as
+   `Versions.APPLICATION_ID` (the single source of truth for future export
+   presets). No export presets or signing config were created (out of scope).
+   Verified: no hyphenated id remains as a value anywhere in source; validity is
+   enforced by `_test_app_id`. (A second owner-level choice — same id on both
+   platforms vs. platform-specific ids — remains open but is not a Phase 1
+   blocker.)
 2. **Drag vs. tap, and P02/P04 overlap.** Solving "move X" puzzles is currently a
    tap; a real drag gesture would read more naturally and would differentiate
-   P02/P04 less by mechanic. Recorded as a Phase 2 content/UX decision.
-3. **GitHub remote.** The repo has no remote; CI is therefore UNVERIFIED on
-   GitHub. Creating a remote/repo needs the owner's account and authorization.
+   P02/P04 less by mechanic. **Recorded as a Phase 2 content/UX consideration
+   only** — not a bug and not a usability blocker (every such puzzle is solvable,
+   fair and clued), so scope was not expanded to address it.
+3. **GitHub remote / CI — BLOCKED.** Attempted to create an independent private
+   repository `think-wrong` for the authenticated owner (`MaherTaha203`): the
+   GitHub integration returned **HTTP 403 "Resource not accessible by
+   integration"**, and this session's GitHub scope is limited to
+   `mahertaha203/game2026`. The repo therefore still has no remote and the CI
+   workflow has **not** been run on GitHub.
+   **Status: BLOCKED — GitHub repository/credentials unavailable.** This is an
+   environment/permissions limitation, not a code failure; CI is **not** claimed
+   to have passed. All CI steps were instead executed locally (§0).
 
 ## Known limitations (UNVERIFIED)
 
@@ -222,12 +238,76 @@ player data.
 - Strength of each "aha" and whether players form the intended assumption — needs
   human playtesting.
 
-## Conclusion
+## 10. Double verification after the bundle-ID fix
 
-Against commit `0e5f706`, Phase 1 is **verifiably complete** for an offline,
-single-device prototype: 0 parse/boot errors; 318 order-independent logic checks;
-20 save-I/O checks; 175 graphical checks across three resolutions; honest,
-fair, side-path-free puzzles with rendered clues; a critical touch-input bug and
-several save/UX bugs fixed with regression tests. Remaining gaps are explicitly
-**UNVERIFIED** (device, Vulkan, GitHub CI, signing, human playtest) and are not
-claimed as passing. ONE LINE was not modified.
+The full local verification was run **twice** after adding `APPLICATION_ID`, from
+a clean working tree, with identical results both times:
+
+| Item | Run 1 | Run 2 |
+| --- | --- | --- |
+| Import / parse | 0 errors | 0 errors |
+| Logic forward / reverse / shuffle | 322 / 0 (×3) | 322 / 0 (×3) |
+| Save I/O | 20 / 0 | 20 / 0 |
+| Boot | 0 errors | 0 errors |
+| QA tour 720×1280 / 720×1600 / 960×1280 | 175 / 0 (×3) | 175 / 0 (×3) |
+| Working tree | clean | clean |
+
+No differences between runs. Runtime screens exercised by the tour (asserted +
+screenshotted): Main Menu, Level Select, P01–P05 (with wrong-attempt and
+intermediate states), Pause, Hint (all tiers), Puzzle Complete, Settings
+(+ high contrast), reset confirmation.
+
+## 11. ONE LINE final isolation check
+
+`/home/user/game2026` was not modified. Recorded state:
+- HEAD: `b187622` (fix(skills): clarify Godot typing and scene animation guidance)
+- Branch: `claude/vibrant-planck-npmf3y`
+- `git status`: clean (no modified/added/deleted files).
+
+## Final classification
+
+**VERIFIED** (executed and proven here):
+- 0 parse errors (import); 0 runtime errors (boot).
+- 322 deterministic logic checks, identical forward / reverse / shuffled.
+- 20 save I/O checks with real autoloads (incl. corruption, partial, unknown
+  version, reset, replay, boot-on-corrupt).
+- Completion integrity (no side paths), determinism, interaction bindings, WAIT
+  clock edge cases, hint progression, data isolation.
+- 175 graphical QA checks ×3 resolutions: touch input reaches controls; clues
+  rendered; sizes/contrast/overflow/overlap/glyph coverage within thresholds.
+- Repository integrity: no secrets, no network, no contamination; working tree
+  clean; ONE LINE untouched.
+
+**FIXED + VERIFIED** (found broken, fixed, re-tested):
+- Touch input dead on controls (`emulate_mouse_from_touch`).
+- Clues not rendered → on-screen captions that track state.
+- Dishonest objectives (P03 deadline, P05 button) → literally true.
+- Completion ownership / double-fire; WAIT running under overlays; NaN/negative
+  dt; WAIT background skip.
+- Save salvage dropping progress/settings; no backup of unreadable saves.
+- Mobile sizes/contrast/glyphs; hint "Show solution" labelling; level-select
+  title spoilers; high-contrast background; safe-area math; reset dialog.
+- Android application id (hyphen) → `com.mahertaha.thinkwrong` + validity test.
+
+**UNVERIFIED** (need a human / real device — not claimed as passing):
+- Physical-device feel and real-device touch feel.
+- Vulkan "mobile" renderer on an actual device (no Vulkan ICD here; tour is GL3).
+- Human playtesting: whether the puzzles are fun, the "aha" is strong, players
+  form the intended wrong assumption, difficulty is right, the game is salable.
+
+**BLOCKED** (needs external permissions/action):
+- GitHub remote + Actions CI — repo creation returned HTTP 403; session scope is
+  `mahertaha203/game2026` only. `BLOCKED — GitHub repository/credentials
+  unavailable`.
+
+## Decision
+
+Everything verifiable locally passes, twice, with no regressions, and all
+remaining items are explicitly UNVERIFIED (human/device) or BLOCKED (GitHub).
+
+**PHASE 1 CLOSED — READY FOR HUMAN PLAYTEST**
+
+Human playtest, physical-device verification, and GitHub CI were not performed in
+this environment and remain UNVERIFIED / BLOCKED respectively. No claim is made
+that the puzzles are fun, the "aha" is strong, difficulty is right, or the game is
+ready to sell — those require real human play. ONE LINE was not modified.
