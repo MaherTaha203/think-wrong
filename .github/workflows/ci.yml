@@ -6,10 +6,8 @@ on:
   pull_request:
 
 # THINK WRONG prototype CI. Downloads Godot 4.3, parse-checks every script via
-# an editor import, runs the deterministic suites (in several orders, to prove
-# order independence), the save I/O integration test, a boot smoke test, the
-# graphical QA tour under Xvfb, and a real Android APK export gate. No secrets
-# required; the Android gate uses a temporary debug keystore only for CI.
+# an editor import, runs deterministic/save/boot/graphical QA, and verifies a
+# native Android debug APK can be exported. No production signing secrets.
 jobs:
   godot:
     name: Parse-check, tests & boot
@@ -68,15 +66,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
       - name: Install Android SDK components
         run: |
-          sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest"
+          sdkmanager "build-tools;34.0.0" "platforms;android-34"
       - name: Download Godot $GODOT_VERSION headless
         run: |
           URL="https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable/Godot_v$GODOT_VERSION-stable_linux.x86_64.zip"
