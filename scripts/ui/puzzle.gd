@@ -92,8 +92,7 @@ func _make_interactable(it: Interactable) -> Control:
 	holder.grow_horizontal = Control.GROW_DIRECTION_BOTH   # a wide label grows from the centre
 
 	if it.is_interactive():
-		var b := Style.make_button(it.label)
-		b.custom_minimum_size = Vector2(0, Style.CONTROL_H)
+		var b := _make_action_button(it)
 		b.pressed.connect(func(): _on_interact(it))
 		holder.add_child(b)
 	else:
@@ -131,6 +130,29 @@ func _process(delta: float) -> void:
 		return
 	_pc.advance_time(minf(delta, MAX_FRAME_DT))
 	_refresh()
+
+## Give each puzzle object a visual grammar that matches its semantic role.
+## Puzzle 01 deliberately makes the door read as an object to operate, while the
+## buzzer button reads as a tempting but secondary control. Both remain large and
+## keyboard/touch accessible; the distinction is never colour-only.
+func _make_action_button(it: Interactable) -> Button:
+	var b := Style.make_button(it.label)
+	b.custom_minimum_size = Vector2(0, Style.CONTROL_H)
+	if it.kind == "door":
+		var normal := Style.flat(Color(0, 0, 0, 0), Style.accent(), 3)
+		var hover := normal.duplicate()
+		hover.bg_color = Style.SURFACE if not Style.high_contrast() else Style.SURFACE_2
+		var pressed := normal.duplicate()
+		pressed.bg_color = Style.accent()
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", pressed)
+		b.add_theme_stylebox_override("hover_pressed", pressed)
+		b.add_theme_color_override("font_color", Style.ink())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.BG)
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	return b
 
 ## Re-render everything that depends on puzzle state.
 func _refresh() -> void:
