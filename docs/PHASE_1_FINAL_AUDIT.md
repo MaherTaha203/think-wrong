@@ -1,5 +1,7 @@
 # THINK WRONG — Phase 1 Final Verification & Audit
 
+> **Historical audit record.** This document preserves the Phase 1 evidence as recorded at the time. The repository has since moved to GitHub, gained automated Android/Web gates, and entered Phase 2. Current status is tracked by the Phase 2 release-readiness audit; historical UNVERIFIED/BLOCKED statements below must not be interpreted as the current repository state.
+
 **Methodology:** Inspect → Verify → Fix → Verify Again → Integration Verify →
 Final Report. No new features or puzzles were added; the scope was to prove Phase 1
 is genuinely complete, not merely that the logic tests pass.
