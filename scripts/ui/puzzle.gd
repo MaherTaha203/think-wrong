@@ -99,7 +99,11 @@ func _make_interactable(it: Interactable) -> Control:
 		# Display-only: a framed panel, deliberately not button-shaped.
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = Vector2(0, Style.CONTROL_H)
-		panel.add_theme_stylebox_override("panel", Style.flat(Color(0, 0, 0, 0), Style.muted(), 2))
+		var panel_style := Style.flat(Color(0, 0, 0, 0), Style.muted(), 2)
+		if _def.id == 3 and it.kind == "timer":
+			# Make the countdown the visual anchor without implying a penalty.
+			panel_style = Style.flat(Style.SURFACE_2, Style.accent(), 3)
+		panel.add_theme_stylebox_override("panel", panel_style)
 		var text := Style.make_title(it.label, Style.H2_SIZE if it.kind == "timer" else Style.BODY_SIZE)
 		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		panel.add_child(text)
@@ -144,6 +148,22 @@ func _make_action_button(it: Interactable) -> Button:
 		hover.bg_color = Style.SURFACE if not Style.high_contrast() else Style.SURFACE_2
 		var pressed := normal.duplicate()
 		pressed.bg_color = Style.accent()
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", pressed)
+		b.add_theme_stylebox_override("hover_pressed", pressed)
+		b.add_theme_color_override("font_color", Style.ink())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.BG)
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	elif _def.id == 3 and it.id == "hurry":
+		# The oversized urgency cue is intentionally tempting, but remains a
+		# secondary action rather than the visual owner of the scene.
+		var normal := Style.flat(Style.SURFACE_2, Style.DANGER, 3)
+		var hover := normal.duplicate()
+		hover.bg_color = Style.SURFACE if not Style.high_contrast() else Style.SURFACE_2
+		var pressed := normal.duplicate()
+		pressed.bg_color = Style.DANGER
 		b.add_theme_stylebox_override("normal", normal)
 		b.add_theme_stylebox_override("hover", hover)
 		b.add_theme_stylebox_override("pressed", pressed)
