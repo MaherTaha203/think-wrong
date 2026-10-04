@@ -1,0 +1,81 @@
+name: Web Playtest
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: ["master"]
+
+concurrency:
+  group: web-playtest
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GODOT_VERSION: "4.3"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot 4.3
+        run: |
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$URL"
+          unzip -q godot.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          chmod +x godot
+
+      - name: Install Web export templates
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          curl -sSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz -d templates
+          cp templates/templates/web_nothreads_release.zip "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/web_nothreads_release.zip"
+
+      - name: Import project
+        run: ./godot --headless --editor --quit --path .
+
+      - name: Run deterministic tests
+        run: |
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=reverse
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=shuffle:${{ github.run_number }}
+
+      - name: Run save I/O integration
+        run: ./godot --headless --path . res://tests/integration/save_io_test.tscn
+
+      - name: Export Web build
+        run: |
+          rm -rf build/web
+          mkdir -p build/web
+          ./godot --headless --path . --export-release "Web" build/web/index.html
+          test -s build/web/index.html
+          test -s build/web/index.pck
+          test -s build/web/index.wasm
+          test -s build/web/index.js
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
