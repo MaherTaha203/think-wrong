@@ -152,6 +152,32 @@ func _make_action_button(it: Interactable) -> Button:
 		b.add_theme_color_override("font_hover_color", Style.ink())
 		b.add_theme_color_override("font_pressed_color", Style.BG)
 		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	elif it.kind == "key":
+		# Anchored object: read as a fixed reference, not as the control to move.
+		var normal := Style.flat(Color(0, 0, 0, 0), Style.muted(), 2)
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", normal.duplicate())
+		b.add_theme_stylebox_override("pressed", normal.duplicate())
+		b.add_theme_color_override("font_color", Style.muted())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.ink())
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	elif it.kind == "lock":
+		# Movable object: stronger affordance so the rail-mounted lock reads as the
+		# thing to move, without relying on colour alone.
+		var normal := Style.flat(Style.SURFACE_2, Style.accent(), 3)
+		var hover := normal.duplicate()
+		hover.bg_color = Style.SURFACE if not Style.high_contrast() else Style.SURFACE_2
+		var pressed := normal.duplicate()
+		pressed.bg_color = Style.accent()
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", pressed)
+		b.add_theme_stylebox_override("hover_pressed", pressed)
+		b.add_theme_color_override("font_color", Style.ink())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.BG)
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
 	return b
 
 ## Re-render everything that depends on puzzle state.
