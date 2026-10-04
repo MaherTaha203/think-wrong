@@ -7,9 +7,9 @@ on:
 
 # THINK WRONG prototype CI. Downloads Godot 4.3, parse-checks every script via
 # an editor import, runs the deterministic suites (in several orders, to prove
-# order independence), the save I/O integration test, a boot smoke test, and the
-# graphical QA tour under Xvfb (OpenGL 3 / Mesa llvmpipe). No secrets required.
-
+# order independence), the save I/O integration test, a boot smoke test, the
+# graphical QA tour under Xvfb, and a real Android APK export gate. No secrets
+# required; the Android gate uses a temporary debug keystore only for CI.
 jobs:
   godot:
     name: Parse-check, tests & boot
@@ -18,12 +18,12 @@ jobs:
       GODOT_VERSION: "4.3"
     steps:
       - uses: actions/checkout@v4
-      - name: Download Godot ${{ env.GODOT_VERSION }} headless
+      - name: Download Godot ${ env.GODOT_VERSION } headless
         run: |
-          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          curl -sSL -o godot.zip "$URL"
+          URL="https://github.com/godotengine/godot/releases/download/\${GODOT_VERSION}-stable/Godot_v\${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$\{URL}"
           unzip -q godot.zip
-          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          mv Godot_v\${GODOT_VERSION}-stable_linux.x86_64 godot
           chmod +x godot
       - name: Import project (parse-checks every script)
         run: |
@@ -35,7 +35,7 @@ jobs:
         run: |
           ./godot --headless --path . --script tests/gdscript/run_tests.gd
           ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=reverse
-          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=shuffle:${{ github.run_number }}
+          ./godot --headless --path . --script tests/gdscript/run_tests.gd -- --order=shuffle:${ github.run_number }
       - name: Save I/O integration (isolated temp save, real autoloads)
         run: ./godot --headless --path . res://tests/integration/save_io_test.tscn
       - name: Boot smoke test (no runtime errors)
@@ -59,3 +59,61 @@ jobs:
           name: qa-tour
           path: qa/
           if-no-files-found: ignore
+
+  android-export:
+    name: Android debug APK export
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: "4.3"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest"
+      - name: Download Godot ${ env.GODOT_VERSION } headless
+        run: |
+          URL="https://github.com/godotengine/godot/releases/download/\${GODOT_VERSION}-stable/Godot_v\${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$\{URL}"
+          unzip -q godot.zip
+          mv Godot_v\${GODOT_VERSION}-stable_linux.x86_64 godot
+          chmod +x godot
+      - name: Install Android export template
+        run: |
+          mkdir -p "$\{HOME\}/.local/share/godot/export_templates/\${GODOT_VERSION}.stable"
+          curl -sSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/\${GODOT_VERSION}-stable/Godot_v\${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz -d templates
+          cp templates/templates/android_debug.apk "$\{HOME\}/.local/share/godot/export_templates/\${GODOT_VERSION}.stable/android_debug.apk"
+      - name: Create temporary debug keystore
+        run: |
+          mkdir -p "$\{HOME\}/.android"
+          keytool -genkeypair -v \
+            -keystore "$\{HOME\}/.android/debug.keystore" \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US"
+      - name: Import project
+        run: ./godot --headless --editor --quit --path .
+      - name: Export Android debug APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${ env.HOME }/.android/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          rm -rf build/android
+          mkdir -p build/android
+          ./godot --headless --path . --export-debug "Android" build/android/THINK_WRONG.apk
+          test -s build/android/THINK_WRONG.apk
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: think-wrong-android-debug
+          path: build/android/THINK_WRONG.apk
+          if-no-files-found: error
