@@ -152,9 +152,6 @@ func _make_action_button(it: Interactable) -> Button:
 		b.add_theme_color_override("font_hover_color", Style.ink())
 		b.add_theme_color_override("font_pressed_color", Style.BG)
 		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
-		b.tooltip_text = "Door — handle visible"
-	elif it.kind == "button":
-		b.tooltip_text = "Control"
 	return b
 
 ## Re-render everything that depends on puzzle state.
