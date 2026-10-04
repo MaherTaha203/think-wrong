@@ -17,7 +17,7 @@ multiplayer, no virtual currency, no store integration in the prototype.
 
 **Phase 2 — Productization / Release Readiness — Audit in progress.**
 
-Current repository baseline is master commit 085dca0255ee247bbcc089df8e0ad2de97388f3b.
+Current repository baseline is master commit 46df640aa5610e9ea562b9d87374f1994a576d24.
 
 The Phase 1 automated and deployment gates are now verified on GitHub:
 - CI regression suite: **PASS** — parse, deterministic logic, save I/O, boot smoke, graphical QA, Android SDK/export, and artifact upload.
