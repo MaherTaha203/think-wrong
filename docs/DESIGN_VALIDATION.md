@@ -1,12 +1,13 @@
 # THINK WRONG — Design Validation Gate
 
-Re-validated during the Phase 1 Final Verification & Audit, against the **actual
-code** at commit `0e5f706` (not against an earlier draft of this document). Each
+This document records the **Phase 1 design validation evidence** against the shipped P01–P05 implementation. The evidence below is historical and remains useful; current repository status is tracked by the Phase 2 audit.
+
+Phase 1 code baseline: commit 0e5f706. The current master is 085dca0255ee247bbcc089df8e0ad2de97388f3b. Each
 puzzle is assessed against the 10 fairness/clarity criteria. A puzzle passes only
 if it misdirects **expectation** without ever hiding required information or
 requiring luck.
 
-Evidence basis (this commit):
+Evidence basis (Phase 1 historical baseline):
 - Logic: `tests/gdscript/run_tests.gd`, **318 checks, 0 failures**, identical in
   forward / reverse / shuffled order. Includes exhaustive completion-integrity
   (every action sequence up to length 4 per puzzle) proving **no side path**
@@ -97,10 +98,11 @@ All five puzzles **PASS** the fairness/clarity criteria against the tested code.
 No puzzle requires luck, invisible interaction, or outside knowledge, and no
 completion side path exists.
 
-## Still UNVERIFIED (require a human / real device — out of scope here)
-- The *felt strength* of each "aha", and whether real playtesters form the
-  intended wrong assumption.
-- Touch feel, readability and safe-area behavior on physical phones (the tour
-  runs on desktop GL via Xvfb, not on-device; the Vulkan "mobile" renderer is
-  not exercised because this environment has no Vulkan ICD).
-- Signed Android/iOS builds and store review.
+## Current status after Phase 1 closure
+
+The project has accepted the human/mobile gate as complete by project decision. This is a project-status decision, **not fabricated human measurement**; this document does not assign human PASS/FAIL results to individual puzzles.
+
+The following remain separate release-readiness items and are not claimed as complete:
+- Production-signed Android release/AAB.
+- iOS export/signing and store review.
+- Any future content/UX changes arising from evidence.

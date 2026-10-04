@@ -15,23 +15,22 @@ multiplayer, no virtual currency, no store integration in the prototype.
 
 ## Status
 
-Prototype, Phase 1 final-audited (see `docs/PHASE_1_FINAL_AUDIT.md`). Verified
-locally with Godot 4.3 at commit `0e5f706`:
+**Phase 2 — Productization / Release Readiness — Audit in progress.**
 
-- scripts compile with 0 errors; project boots clean;
-- **318 deterministic logic checks** pass, identical in forward / reverse /
-  shuffled order (`tests/gdscript/run_tests.gd`);
-- **20 save I/O checks** pass with the real autoloads
-  (`tests/integration/save_io_test.gd`);
-- **175 graphical QA checks** pass at 720×1280, 720×1600 and 960×1280 — the real
-  game driven by injected touch under Xvfb/OpenGL 3
-  (`tests/visual/qa_tour.gd`), screenshots saved per run.
+Current repository baseline is master commit 085dca0255ee247bbcc089df8e0ad2de97388f3b.
 
-Interactive feel on a **physical device**, the Vulkan "mobile" renderer, signed
-iOS/Android builds, and store review are **UNVERIFIED** (need devices /
-credentials). The CI workflow runs all of the above but has **not been executed
-on GitHub** — this repository has no remote.
+The Phase 1 automated and deployment gates are now verified on GitHub:
+- CI regression suite: **PASS** — parse, deterministic logic, save I/O, boot smoke, graphical QA, Android SDK/export, and artifact upload.
+- Web Playtest workflow: **PASS** — web build, tests, export, and deployment.
+- Android debug APK export gate: **PASS**.
+- Application ID: com.mahertaha.thinkwrong.
+- App version: 0.1.0; content version: 1; save-data version: 1.
 
+The project decision for this phase accepts the human/mobile playtest gate as complete. This README does **not** invent human observations or measurements; those are not represented as automated evidence.
+
+The current phase is an **audit and release-readiness pass**, not a feature-development pass. No new puzzle, monetization, analytics, backend, account system, multiplayer, or unrelated polish is being added.
+
+**Current release-readiness limitation:** the repository has a verified Android **debug APK** export, not a production-signed Android release/AAB, and no iOS/store submission gate is being claimed.
 ## Run
 
 Open in **Godot 4.3** and press Play, or headless:

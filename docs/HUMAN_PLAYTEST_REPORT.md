@@ -1,51 +1,20 @@
 # THINK WRONG — Human Playtest Gate Report
 
-**Test date:** 2026-10-03
-**Build / commit:** `6346808` (branch `master`), Phase 1 CLOSED.
+**Original test package date:** 2026-10-03
+**Current project baseline:** 085dca0255ee247bbcc089df8e0ad2de97388f3b (master).
 **Engine:** Godot 4.3.stable.
-**Prepared by:** automated agent (Claude Code). No code was changed for this gate.
+
+> **Current project decision:** the human/mobile playtest gate is accepted as complete and Phase 2 is authorized to proceed. This records the project decision only; it does **not** invent participant counts, quotes, timings, or device measurements that are not present in this report.
 
 ---
 
 ## 0. Executive status
 
-> **PLAYTEST PACKAGE READY — HUMAN SESSION REQUIRED**
->
-> (The human session and the physical-device pass themselves remain BLOCKED in
-> this environment — see §4, §5. What is now *ready* is everything that can be
-> prepared without fabricating human results: a verified frozen build, a run
-> method, test-data isolation/reset, and a complete printable test package.)
+> **HUMAN/MOBILE GATE ACCEPTED — PROJECT DECISION**
 
-### Prior status (superseded)
-> HUMAN PLAYTEST BLOCKED — MORE REAL-WORLD TESTING REQUIRED
+The original automated report correctly refused to fabricate human observations. The current project decision supersedes its old BLOCKED gate state and authorizes Phase 2.
 
-The Human Playtest Gate asks for **real, naive human players** and, where
-possible, a **physical device**. Neither is available to an automated agent in
-this environment:
-
-- There are **no human testers** reachable from this session. The gate's core
-  measurements — *which assumption the player actually forms*, whether the "aha"
-  lands, perceived fairness, whether they suspect a hidden interaction — are
-  **by definition** human observations. They cannot be produced by the agent
-  without fabricating evidence, which the project rules (§8) forbid and the task
-  explicitly prohibits ("لا تعتبر أي انطباع شخصي دليلاً تقنياً").
-- There is **no Android/iOS device** attached, and the simulator is explicitly
-  not an acceptable substitute per the task.
-
-Therefore **no human-playtest results are reported as PASS or FAIL**, and none
-are invented. What this document *does* deliver:
-
-1. Confirmation that the build still matches the Phase 1 closure baseline
-   (so a real playtest would run on known-good code) — **VERIFIED**.
-2. A complete, ready-to-run **playtest protocol and data instrument** (script,
-   per-puzzle observation sheet, assumption-formation method, hint rubric,
-   severity classification) so a facilitator can run it unchanged.
-3. The expected/intended behavior per puzzle, for comparison against observed
-   behavior once real sessions are run.
-4. Honest BLOCKED records for the human session and the physical-device pass.
-
-No gameplay, puzzle, hint, save, or architecture change was made. ONE LINE was
-not touched.
+No new human measurements are added here. The old protocol and observation instruments remain available as the correct method for any future evidence-based usability/content study.
 
 ---
 
@@ -169,36 +138,15 @@ full tests → QA → double re-verify → no regression → update this report.
 
 ---
 
-## 4. Human playtest session — BLOCKED
+## 4. Human playtest session — ACCEPTED BY PROJECT DECISION
 
-| Field | Value |
-| --- | --- |
-| Number of players | **0** (no human testers reachable by the agent) |
-| P01–P05 observed results | **BLOCKED** — not collected |
-| Assumption formation (observed) | **BLOCKED** — requires human think-aloud |
-| Hint usage (observed) | **BLOCKED** |
-| Completion behavior (observed) | **BLOCKED** |
-| "Aha" strength | **BLOCKED / UNVERIFIED** — human judgment only |
-
-No values are estimated or simulated. An AI solving the puzzles would prove
-nothing about whether a *human* forms the intended assumption, so no agent
-"play-through" is offered as a stand-in.
+The gate is treated as complete by explicit project decision. This report does not retroactively invent player observations, assumption quotes, timings, hint usage, or "aha" measurements.
 
 ---
 
-## 5. Physical-device pass (Step 10) — BLOCKED
+## 5. Physical-device pass (Step 10) — ACCEPTED BY PROJECT DECISION
 
-No Android or iPhone device is attached to this environment, and the simulator
-is not an acceptable substitute per the task. The following are therefore
-**PHYSICAL DEVICE — BLOCKED/UNVERIFIED**, not guessed: touch response, touch-target
-feel, scrolling, drag/tap feel, safe area, portrait orientation, text
-readability on a real panel, transitions, audio/haptics, pause/resume,
-background/foreground lifecycle, save persistence across real app kills, reset,
-replay, and on-device P01–P05.
-
-Context only (machine-checked in Phase 1, **not** a device result): touch input
-reaches controls via `InputEventScreenTouch`; targets ≥96 px and text ≥28 px at
-720×1280/720×1600/960×1280; save survives corruption and app-pause writes.
+The mobile gate is treated as complete by explicit project decision. No device-specific measurements are added to this historical report.
 
 ---
 
@@ -266,33 +214,16 @@ in game; one player at a time with no observing of others; the build is frozen f
 the whole group; incompletes/declined-hints are recorded; inconvenient data is
 never discarded.
 
-## 8. Recommended next action
+## 8. Current next action
 
-Run the §3 protocol using the `playtest/` package with 4–6 naive players on build
-`6346808` (ideally also at least one on a real Android and one on iOS once a signed
-build exists). Capture the forms and the assumption grid, then return here to fill
-§4–§6 and re-run the gate decision. Until then, the experiential quality of the
-game is unestablished.
+Continue Phase 2 Productization / Release Readiness through the Scope/Audit methodology. Do not add features unless a verified release-readiness gap requires the smallest possible change.
 
 ---
 
 ## 9. Gate decision
 
-**PLAYTEST PACKAGE READY — HUMAN SESSION REQUIRED**
+**HUMAN/MOBILE GATE ACCEPTED BY PROJECT DECISION**
 
-Everything preparable without real humans or a device is done and verified: the
-build is frozen and re-verified (baseline green, twice), game sources are
-byte-identical to the test commit, ONE LINE is isolated, and a complete run
-method + test-data isolation + printable test package (`playtest/`) are in place.
+Phase 1 is considered closed for project progression. This acceptance is explicitly a project decision and is not presented as fabricated human-study evidence.
 
-The **human playtest session** and the **physical-device pass** still
-**could not be performed** in this environment and remain **BLOCKED** — not PASS,
-and not fabricated. The Human Playtest Gate is therefore **not** declared passed.
-
-No claim is made that the puzzles are fun, that the "aha" is strong, that players
-form the intended assumption, that difficulty is appropriate, or that the game is
-ready to sell. Those require real human play on real devices.
-
-**Phase 2 is NOT started. No Puzzle 06, no new features, no monetization, no
-analytics, no backend, no unrelated polish.** Awaiting a separate decision after
-a real Human Playtest Report exists.
+**Phase 2 is authorized.** Scope remains locked: no Puzzle 06, no unsolicited P01–P05 tuning, no monetization, analytics, backend, accounts, multiplayer, or unrelated polish.
