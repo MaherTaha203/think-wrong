@@ -198,6 +198,34 @@ func _make_action_button(it: Interactable) -> Button:
 		b.add_theme_color_override("font_hover_color", Style.ink())
 		b.add_theme_color_override("font_pressed_color", Style.BG)
 		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	elif it.kind == "box":
+		# Puzzle 04: the box is the movable solution object. Give it the same
+		# strong affordance grammar as the movable lock, while keeping the pinned
+		# object visually quiet so the intended movement is readable at a glance.
+		var normal := Style.flat(Style.SURFACE_2, Style.accent(), 3)
+		var hover := normal.duplicate()
+		hover.bg_color = Style.SURFACE if not Style.high_contrast() else Style.SURFACE_2
+		var pressed := normal.duplicate()
+		pressed.bg_color = Style.accent()
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", pressed)
+		b.add_theme_stylebox_override("hover_pressed", pressed)
+		b.add_theme_color_override("font_color", Style.ink())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.BG)
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
+	elif it.kind == "object":
+		# Anchored object: visually subordinate to the movable box without making
+		# its fixed state depend on colour alone; the caption remains authoritative.
+		var normal := Style.flat(Color(0, 0, 0, 0), Style.muted(), 2)
+		b.add_theme_stylebox_override("normal", normal)
+		b.add_theme_stylebox_override("hover", normal.duplicate())
+		b.add_theme_stylebox_override("pressed", normal.duplicate())
+		b.add_theme_color_override("font_color", Style.muted())
+		b.add_theme_color_override("font_hover_color", Style.ink())
+		b.add_theme_color_override("font_pressed_color", Style.ink())
+		b.add_theme_font_size_override("font_size", Style.H2_SIZE)
 	return b
 
 ## Re-render everything that depends on puzzle state.
