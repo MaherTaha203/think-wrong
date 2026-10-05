@@ -1,7 +1,7 @@
 # THINK WRONG — Human Playtest Gate Report
 
 **Original test package date:** 2026-10-03
-**Current project baseline:** 085dca0255ee247bbcc089df8e0ad2de97388f3b (master).
+**Current project baseline:** the `master` branch; use Git history for the exact commit under review.
 **Engine:** Godot 4.3.stable.
 
 > **Current project decision:** the human/mobile playtest gate is accepted as complete and Phase 2 is authorized to proceed. This records the project decision only; it does **not** invent participant counts, quotes, timings, or device measurements that are not present in this report.
