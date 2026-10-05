@@ -2,7 +2,7 @@
 
 This document records the **Phase 1 design validation evidence** against the shipped P01–P05 implementation. The evidence below is historical and remains useful; current repository status is tracked by the Phase 2 audit.
 
-Phase 1 code baseline: commit 0e5f706. The current master is 085dca0255ee247bbcc089df8e0ad2de97388f3b. Each
+Phase 1 code baseline: commit 0e5f706. The current repository baseline is the `master` branch; use Git history for the exact commit under review. Each
 puzzle is assessed against the 10 fairness/clarity criteria. A puzzle passes only
 if it misdirects **expectation** without ever hiding required information or
 requiring luck.
