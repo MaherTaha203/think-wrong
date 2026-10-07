@@ -15,7 +15,7 @@ multiplayer, no virtual currency, no store integration in the prototype.
 
 ## Status
 
-**Phase 2 — Productization / Release Readiness — Audit in progress.**
+**Phase 2 — Productization / Release Readiness — AUDIT CLOSED.**
 
 Repository baseline: the current `master` branch. Use the branch history in GitHub for the exact commit under review.
 
@@ -28,7 +28,7 @@ The Phase 1 automated and deployment gates are now verified on GitHub:
 
 The project decision for this phase accepts the human/mobile playtest gate as complete. This README does **not** invent human observations or measurements; those are not represented as automated evidence.
 
-The current phase is an **audit and release-readiness pass**, not a feature-development pass. No new puzzle, monetization, analytics, backend, account system, multiplayer, or unrelated polish is being added.
+Phase 2 audit is **closed**: all required prototype/release-readiness gates in scope passed. No feature-development change was required. No new puzzle, monetization, analytics, backend, account system, multiplayer, or unrelated polish was added.
 
 **Current release-readiness limitation:** the repository has a verified Android **debug APK** export, not a production-signed Android release/AAB, and no iOS/store submission gate is being claimed.
 ## Run
