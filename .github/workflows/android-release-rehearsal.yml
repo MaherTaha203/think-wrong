@@ -93,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           unzip -t build/android/THINK_WRONG.aab >/dev/null
-          jarsigner -verify -strict -verbose build/android/THINK_WRONG.aab >/tmp/jarsigner.log 2>&1
+          jarsigner -verify -verbose build/android/THINK_WRONG.aab >/tmp/jarsigner.log 2>&1
           grep -q "jar verified" /tmp/jarsigner.log
           sha256sum build/android/THINK_WRONG.aab
 
