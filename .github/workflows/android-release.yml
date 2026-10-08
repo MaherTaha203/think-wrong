@@ -1,0 +1,118 @@
+name: Android Production Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-release:
+    name: Android production AAB
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: "4.3"
+      KEYSTORE_B64: ${{ secrets.THINK_WRONG_ANDROID_KEYSTORE_B64 }}
+      KEYSTORE_USER: ${{ secrets.THINK_WRONG_ANDROID_KEYSTORE_USER }}
+      KEYSTORE_PASSWORD: ${{ secrets.THINK_WRONG_ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require production signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo "::error::THINK_WRONG_ANDROID_KEYSTORE_B64 is not configured"; exit 1; }
+          test -n "$KEYSTORE_USER" || { echo "::error::THINK_WRONG_ANDROID_KEYSTORE_USER is not configured"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::THINK_WRONG_ANDROID_KEYSTORE_PASSWORD is not configured"; exit 1; }
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Download Godot $GODOT_VERSION headless
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable/Godot_v$GODOT_VERSION-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$URL"
+          unzip -q godot.zip
+          mv "Godot_v$GODOT_VERSION-stable_linux.x86_64" godot
+          chmod +x godot
+
+      - name: Install matching Android export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+          mkdir -p "$DEST"
+          curl -sSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable/Godot_v$GODOT_VERSION-stable_export_templates.tpz"
+          unzip -q templates.tpz -d templates
+          test -s templates/templates/android_release.apk
+          test -s templates/templates/android_debug.apk
+          test -s templates/templates/android_source.zip
+          cp templates/templates/android_release.apk "$DEST/android_release.apk"
+          cp templates/templates/android_debug.apk "$DEST/android_debug.apk"
+          cp templates/templates/android_source.zip "$DEST/android_source.zip"
+          cp templates/templates/version.txt "$DEST/version.txt"
+
+      - name: Prepare production keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/think-wrong-release.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          test -s "$KEYSTORE"
+          keytool -list -keystore "$KEYSTORE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEYSTORE_USER" >/dev/null
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_USER" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Install Android Gradle build template into project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android/build android/plugins
+          unzip -q -o templates/templates/android_source.zip -d android/build
+          touch android/build/.gdignore
+          printf '%s\n' "$GODOT_VERSION.stable" > android/.build_version
+          test -f android/build/build.gradle
+
+      - name: Import project
+        run: ./godot --headless --editor --quit --path .
+
+      - name: Export signed Android AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build/android
+          mkdir -p build/android
+          ./godot --headless --path . --export-release "Android Release" build/android/THINK_WRONG.aab
+          test -s build/android/THINK_WRONG.aab
+
+      - name: Verify AAB archive and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -t build/android/THINK_WRONG.aab >/dev/null
+          jarsigner -verify -verbose build/android/THINK_WRONG.aab >/tmp/jarsigner.log 2>&1
+          grep -q "jar verified" /tmp/jarsigner.log
+          sha256sum build/android/THINK_WRONG.aab
+
+      - name: Upload production AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: think-wrong-android-release
+          path: build/android/THINK_WRONG.aab
+          if-no-files-found: error
