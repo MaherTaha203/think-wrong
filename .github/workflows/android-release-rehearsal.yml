@@ -55,6 +55,7 @@ jobs:
           cp templates/templates/android_release.apk "$DEST/android_release.apk"
           cp templates/templates/android_debug.apk "$DEST/android_debug.apk"
           cp templates/templates/android_source.zip "$DEST/android_source.zip"
+          cp templates/templates/version.txt "$DEST/version.txt"
 
       - name: Create ephemeral release keystore
         shell: bash
